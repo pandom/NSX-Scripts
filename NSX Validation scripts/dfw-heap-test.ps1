@@ -1,6 +1,7 @@
 ## Test for DFW Memory heap usage
 #a: Anthony Burke - @pandom_
-#c: (dcoghland for original idea and initial code, nbradford for sanity checks)
+#c: (dcoghland for original idea and initial code, nbradford for sanity checks and matching)
+#r: PowerCLI, PowerNSX, PSate, PShould
 
 
 ## DO NOT EDIT.
@@ -15,7 +16,13 @@
 
 ## Initiate Test sequence
 DescribingEach "Distributed Firewall Memory heaps"{
-  $vSphereHosts = Get-VmHost
+  $vSphereHosts = get-cluster | % {
+    $currclus = $_
+      if (($currclus | get-nsxclusterstatus | ? { $_.featureId -eq 'com.vmware.vshield.firewall' }).Installed -eq 'true') {
+        $currclus
+    }
+  } | get-vmhost
+
   # For each vSphere host found by Get-VMhost connect to host with SSH
   foreach ( $vsphere in $vSphereHosts ) {
     GivenEach "vSphere Host $($vSphere.name)" {
