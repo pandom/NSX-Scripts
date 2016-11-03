@@ -1,4 +1,4 @@
-#t: 8-way ECMP with BGP. 
+#t: 8-way ECMP with BGP using copy-nsxedge. 
 #a: Anthony Burke
 #ECMP 8-way
 # Script's goal is to create an 8-way ECMP edge with upstream.
@@ -142,7 +142,7 @@ param (
 	$edge1vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $Edge1UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
 	$edge1vnic1 = New-NsxEdgeInterfaceSpec -index 1 -Name 'Downlink' -type Internal -PrimaryAddress $Edge1InternalAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $TransitNetwork
 
-	$edge2vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $edge2UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
+  $edge2vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $edge2UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
 	$edge2vnic1 = New-NsxEdgeInterfaceSpec -index 1 -Name 'Downlink' -type Internal -PrimaryAddress $edge2InternalAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $TransitNetwork
 
 	$edge3vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $edge3UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
@@ -163,53 +163,23 @@ param (
 	$edge8vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $Edge8UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
 	$edge8vnic1 = New-NsxEdgeInterfaceSpec -index 1 -Name 'Downlink' -type Internal -PrimaryAddress $Edge8InternalAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $TransitNetwork
 
-
 ## Creating Edge
 	$Edge0 = New-NsxEdge -name $Edge0Name -cluster $Cluster -datastore $DataStore -Interface $edge0vnic0, $edge0vnic1 -Password $Password -FormFactor $FormFactor -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge1 = New-NsxEdge -name $Edge1Name -cluster $Cluster -datastore $DataStore -Interface $edge1vnic0, $edge1vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge2 = New-NsxEdge -name $Edge2Name -cluster $Cluster -datastore $DataStore -Interface $edge2vnic0, $edge2vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge3 = New-NsxEdge -name $Edge3Name -cluster $Cluster -datastore $DataStore -Interface $edge3vnic0, $edge3vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge4 = New-NsxEdge -name $Edge4Name -cluster $Cluster -datastore $DataStore -Interface $edge4vnic0, $edge4vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge5 = New-NsxEdge -name $Edge5Name -cluster $Cluster -datastore $DataStore -Interface $edge5vnic0, $edge5vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge6 = New-NsxEdge -name $Edge6Name -cluster $Cluster -datastore $DataStore -Interface $edge6vnic0, $edge6vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge7 = New-NsxEdge -name $Edge7Name -cluster $Cluster -datastore $DataStore -Interface $edge7vnic0, $edge7vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge8 = New-NsxEdge -name $Edge8Name -cluster $Cluster -datastore $DataStore -Interface $edge8vnic0, $edge8vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge1 = Get-NsxEdge -name $Edge0Name | Copy-NsxEdge -name $edge1name -Password $Password -Interface $edge1vnic0, $edge1vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False 
 
 	##Enable BGP on Edges
 	
  	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge0UplinkAddress -EnableEcmp -LocalAs $upsteamAs -confirm:$false | out-null 
 
 	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge1UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge2Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge2UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge3Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge3UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge4Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge4UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge5Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge5UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge6Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge6UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge7Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge7UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
-	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge8UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null
-	
+
+  ## Define Edge to Upstream router peering
+
+	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
 
 	## Define Edge to DLR Peering
 
 	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null
-	get-nsxedge -name $Edge2Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge3Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge4Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge5Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge6Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge7Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null  
-
-	## Define Edge to Upstream router peering
-
-	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge2Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
-	get-nsxedge -name $Edge3Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
-	get-nsxedge -name $Edge4Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge5Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
-	get-nsxedge -name $Edge6Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
-	get-nsxedge -name $Edge7Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
-	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
 
 	## Upstream Router $edge0 to Edges
 
@@ -239,3 +209,16 @@ param (
 	Get-nsxlogicalrouter -name $dlrname | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterBgpNeighbour -IpAddress $edge6InternalAddress -RemoteAs $EdgeAs -forwardingaddress $DlrUplinkPrimaryAddress  -protocoladdress $DlrRouterId -confirm:$false | Out-Null
 	Get-nsxlogicalrouter -name $dlrname | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterBgpNeighbour -IpAddress $edge7InternalAddress -RemoteAs $EdgeAs -forwardingaddress $DlrUplinkPrimaryAddress  -protocoladdress $DlrRouterId -confirm:$false | Out-Null
 	Get-nsxlogicalrouter -name $dlrname | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterBgpNeighbour -IpAddress $edge8InternalAddress -RemoteAs $EdgeAs -forwardingaddress $DlrUplinkPrimaryAddress  -protocoladdress $DlrRouterId -confirm:$false | Out-Null
+
+  ## Cloning Edge1 for Edges 2-8
+
+  $Edge2 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge2name -Password $Password -Interface $edge2vnic0,$edge2vnic1
+  $Edge3 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge3name -Password $Password -Interface $edge3vnic0,$edge3vnic1
+  $Edge4 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge4name -Password $Password -Interface $edge4vnic0,$edge4vnic1
+  $Edge5 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge5name -Password $Password -Interface $edge5vnic0,$edge5vnic1
+  $Edge6 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge6name -Password $Password -Interface $edge6vnic0,$edge6vnic1
+  $Edge7 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge7name -Password $Password -Interface $edge7vnic0,$edge7vnic1
+  $Edge8 = Get-NsxEdge -name $Edge1Name | Copy-NsxEdge -name $edge8name -Password $Password -Interface $edge8vnic0,$edge8vnic1
+
+
+  
