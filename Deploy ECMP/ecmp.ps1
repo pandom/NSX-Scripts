@@ -166,14 +166,14 @@ param (
 
 ## Creating Edge
 	$Edge0 = New-NsxEdge -name $Edge0Name -cluster $Cluster -datastore $DataStore -Interface $edge0vnic0, $edge0vnic1 -Password $Password -FormFactor $FormFactor -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge1 = New-NsxEdge -name $Edge1Name -cluster $Cluster -datastore $DataStore -Interface $edge1vnic0, $edge1vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge2 = New-NsxEdge -name $Edge2Name -cluster $Cluster -datastore $DataStore -Interface $edge2vnic0, $edge2vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge3 = New-NsxEdge -name $Edge3Name -cluster $Cluster -datastore $DataStore -Interface $edge3vnic0, $edge3vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge4 = New-NsxEdge -name $Edge4Name -cluster $Cluster -datastore $DataStore -Interface $edge4vnic0, $edge4vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge5 = New-NsxEdge -name $Edge5Name -cluster $Cluster -datastore $DataStore -Interface $edge5vnic0, $edge5vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge6 = New-NsxEdge -name $Edge6Name -cluster $Cluster -datastore $DataStore -Interface $edge6vnic0, $edge6vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge7 = New-NsxEdge -name $Edge7Name -cluster $Cluster -datastore $DataStore -Interface $edge7vnic0, $edge7vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-	$Edge8 = New-NsxEdge -name $Edge8Name -cluster $Cluster -datastore $DataStore -Interface $edge8vnic0, $edge8vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled $False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge1 = New-NsxEdge -name $Edge1Name -cluster $Cluster -datastore $DataStore -Interface $edge1vnic0, $edge1vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge2 = New-NsxEdge -name $Edge2Name -cluster $Cluster -datastore $DataStore -Interface $edge2vnic0, $edge2vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge3 = New-NsxEdge -name $Edge3Name -cluster $Cluster -datastore $DataStore -Interface $edge3vnic0, $edge3vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge4 = New-NsxEdge -name $Edge4Name -cluster $Cluster -datastore $DataStore -Interface $edge4vnic0, $edge4vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge5 = New-NsxEdge -name $Edge5Name -cluster $Cluster -datastore $DataStore -Interface $edge5vnic0, $edge5vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge6 = New-NsxEdge -name $Edge6Name -cluster $Cluster -datastore $DataStore -Interface $edge6vnic0, $edge6vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge7 = New-NsxEdge -name $Edge7Name -cluster $Cluster -datastore $DataStore -Interface $edge7vnic0, $edge7vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
+	$Edge8 = New-NsxEdge -name $Edge8Name -cluster $Cluster -datastore $DataStore -Interface $edge8vnic0, $edge8vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
 
 	##Enable BGP on Edges
 	
