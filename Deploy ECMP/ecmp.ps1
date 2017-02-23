@@ -94,7 +94,7 @@ param (
 ## Environment checks
     [int]$PowerCliMajorVersion = (Get-PowerCliVersion).major
 
-    if ( -not ($PowerCliMajorVersion -ge 6 ) ) { throw 'This script requires PowerShell 6' }
+    #if ( -not ($PowerCliMajorVersion -ge 6 ) ) { throw 'This script requires PowerShell 6' }
 
     try {
         $Cluster = get-cluster $ClusterName -errorAction Stop
@@ -106,16 +106,16 @@ param (
     }
 
 ## Logical Switches
-
+	Write-Host -ForegroundColor Green "Creating transit LS $DlrToEdgeLsName and $EdgeToUpstreamLsName"
 	$DlrToEdgeLs = Get-NsxTransportZone | New-NsxLogicalSwitch -name $DlrToEdgeLsName
 	$EdgeToUpstreamLs = Get-NsxTransportZone | New-NsxLogicalSwitch $EdgeToUpstreamLsName
 
 ## Creating DLR
 
 	# DLR Appliance has the uplink router interface created first.
-
+	
 	$DlrvNic0 = New-NsxLogicalRouterInterfaceSpec -type Uplink -Name $DlrToEdgeLsName -ConnectedTo $DlrToEdgeLs -PrimaryAddress $DlrUplinkPrimaryAddress -SubnetPrefixLength $DefaultSubnetBits
-
+	Write-Host -ForegroundColor Green "Creating  $dlrname DLR"
 	# The DLR is created with the first vnic defined, and the datastore and cluster on which the Control VM will be deployed.
 	$Dlr = New-NsxLogicalRouter -name $DlrName -ManagementPortGroup $EdgeUplinkNetwork -interface $DlrvNic0 -cluster $Cluster -datastore $Datastore
 
@@ -123,6 +123,7 @@ param (
 	Get-NsxLogicalRouter $DlrName | Get-NsxLogicalRouterRouting | Set-NsxLogicalRouterRouting -EnableBgp -LocalAs $DlrAs -enableEcmp -RouterId $DlrRouterId -confirm:$false | out-null
 
 	#This is quite slow. I should go ahead and create the interfacespec here and then store them in a hash table. Then loop over table on DLR creation. it will be faster.
+	Write-Host -ForegroundColor Green "Adding interfaces to DLR"
 	$lifs = @($ls1,$ls2,$ls3,$ls4,$ls5,$ls6,$ls7,$ls8,$ls9,$ls10)
 
 	foreach ($lif in $lifs) {
@@ -134,8 +135,8 @@ param (
 
 	$EdgeToUpstreamLs =  $EdgeToUpstreamLs | Get-NsxBackingPortGroup | Where { $_.VDSwitch -match ("$MgtVds") }
 	$TransitNetwork =  $DlrToEdgeLs | Get-NsxBackingPortGroup | Where { $_.VDSwitch -match ("$MgtVds") }
-
-## Defining Edge Interface Specs
+	Write-Host -ForegroundColor Green "Creating Edge Interface specs"
+	## Defining Edge Interface Specs
 	$edge0vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $Edge0UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeUplinkNetwork
 	$edge0vnic1 = New-NsxEdgeInterfaceSpec -index 1 -Name 'Downlink' -type Internal -PrimaryAddress $Edge0InternalAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
 
@@ -163,8 +164,8 @@ param (
 	$edge8vnic0 = New-NsxEdgeinterfacespec -index 0 -Name 'Uplink' -type Uplink  -PrimaryAddress $Edge8UplinkAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $EdgeToUpstreamLs
 	$edge8vnic1 = New-NsxEdgeInterfaceSpec -index 1 -Name 'Downlink' -type Internal -PrimaryAddress $Edge8InternalAddress -SubnetPrefixLength $DefaultSubnetBits -ConnectedTo $TransitNetwork
 
-
-## Creating Edge
+	Write-Host -ForegroundColor Green "Creating Edges"
+	## Creating Edge
 	$Edge0 = New-NsxEdge -name $Edge0Name -cluster $Cluster -datastore $DataStore -Interface $edge0vnic0, $edge0vnic1 -Password $Password -FormFactor $FormFactor -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
 	$Edge1 = New-NsxEdge -name $Edge1Name -cluster $Cluster -datastore $DataStore -Interface $edge1vnic0, $edge1vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
 	$Edge2 = New-NsxEdge -name $Edge2Name -cluster $Cluster -datastore $DataStore -Interface $edge2vnic0, $edge2vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
@@ -174,11 +175,11 @@ param (
 	$Edge6 = New-NsxEdge -name $Edge6Name -cluster $Cluster -datastore $DataStore -Interface $edge6vnic0, $edge6vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
 	$Edge7 = New-NsxEdge -name $Edge7Name -cluster $Cluster -datastore $DataStore -Interface $edge7vnic0, $edge7vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
 	$Edge8 = New-NsxEdge -name $Edge8Name -cluster $Cluster -datastore $DataStore -Interface $edge8vnic0, $edge8vnic1 -Password $Password -FormFactor $FormFactor -FwEnabled:$False -FwDefaultPolicyAllow -AutoGenerateRules -enableSSH
-
+	Write-Host -ForegroundColor Green "Configuring BGP on Edges"
 	##Enable BGP on Edges
-	
- 	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge0UplinkAddress -EnableEcmp -LocalAs $upsteamAs -confirm:$false | out-null 
-
+	Write-Host -ForegroundColor Green "Configuring Upsteam Edge BGP for AS $EdgeAs"
+	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge0UplinkAddress -EnableEcmp -LocalAs $upsteamAs -confirm:$false | out-null 
+	Write-Host -ForegroundColor Green "Configuring Edge 1-8 BGP for AS $EdgeAs"
 	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge1UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
 	get-nsxedge -name $Edge2Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge2UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
 	get-nsxedge -name $Edge3Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge3UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
@@ -188,7 +189,7 @@ param (
 	get-nsxedge -name $Edge7Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge7UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null 
 	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | Set-NsxEdgeRouting -EnableBgp -RouterId $Edge8UplinkAddress -EnableEcmp -LocalAs $edgeAs -confirm:$false | out-null
 	
-
+	Write-Host -ForegroundColor Green "Configuring Edge to DLR BGP Peering"
 	## Define Edge to DLR Peering
 
 	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null
@@ -201,7 +202,7 @@ param (
 	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $dlrrouterid -RemoteAs $dlrAs -confirm:$false | Out-Null  
 
 	## Define Edge to Upstream router peering
-
+	Write-Host -ForegroundColor Green "Configuring Edge to Upstream peering"
 	get-nsxedge -name $Edge1Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
 	get-nsxedge -name $Edge2Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
 	get-nsxedge -name $Edge3Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null  
@@ -212,7 +213,7 @@ param (
 	get-nsxedge -name $Edge8Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge0internaladdress -RemoteAs $upsteamas -confirm:$false | Out-Null 
 
 	## Upstream Router $edge0 to Edges
-
+	Write-Host -ForegroundColor Green "Configuring Upsteam peering to all Edges "
 	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge1UplinkAddress -RemoteAs $EdgeAs -confirm:$false | Out-Null
 	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge2UplinkAddress -RemoteAs $EdgeAs -confirm:$false | Out-Null 
 	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge3UplinkAddress -RemoteAs $EdgeAs -confirm:$false | Out-Null 
@@ -223,12 +224,12 @@ param (
 	get-nsxedge -name $Edge0Name | Get-NsxEdgeRouting | New-NsxEdgeBgpNeighbour -IpAddress $edge8UplinkAddress -RemoteAs $EdgeAs -confirm:$false | Out-Null   
 
 	## Configure DLR BGP
-
+	Write-Host -ForegroundColor Green "Configuring DLR BGP for AS $dlras "
 	get-nsxlogicalrouter -name $dlrName | Get-NsxLogicalRouterRouting | Set-NsxLogicalRouterRouting -EnableBgp -RouterId $dlrrouterid -forwardingAddress $dlrrouterid -protocoladdress $DlrUplinkPrimaryAddress -LocalAs $dlras -confirm:$false | out-null
 		
 
 	## Configure DLR BGP Neighbors
-
+	Write-Host -ForegroundColor Green "Configuring DLR peering to all Edges "
 	Get-NsxLogicalRouter -name $dlrname | Get-NsxLogicalRouterRouting | Set-NsxLogicalRouterRouting -EnableBgpRouteRedistribution -confirm:$false | Out-Null
 	Get-NsxLogicalRouter -name $dlrName | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterRedistributionRule -learner bgp -FromConnected -confirm:$false | Out-Null
 	Get-nsxlogicalrouter -name $dlrname | Get-NsxLogicalRouterRouting | New-NsxLogicalRouterBgpNeighbour -IpAddress $edge1InternalAddress -RemoteAs $EdgeAs -forwardingaddress $DlrUplinkPrimaryAddress  -protocoladdress $DlrRouterId -confirm:$false | Out-Null
