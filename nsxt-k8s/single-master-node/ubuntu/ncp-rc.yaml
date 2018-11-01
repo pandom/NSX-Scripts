@@ -1,14 +1,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nsx-node-agent-config
+  name: nsx-ncp-config
   namespace: nsx-system
   labels:
     version: v1
 data:
   ncp.ini: |
     [DEFAULT]
-    debug = True
     [coe]
     cluster = k8s-cluster1
     nsxlib_loglevel=INFO
@@ -18,108 +17,72 @@ data:
     apiserver_host_port = 6443
     ca_file = /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
     client_token_file = /var/run/secrets/kubernetes.io/serviceaccount/token
-    [nsx_node_agent]
-    [nsx_kube_proxy]
+    [nsx_v3]
+    nsx_api_managers = nsxmgr-01a.corp.local
+    nsx_api_user = admin
+    nsx_api_password = VMware1!
+    insecure = True
+    subnet_prefix = 28
+    use_native_loadbalancer = True
+    pool_algorithm = 'ROUND_ROBIN'
+    service_size = 'SMALL'
+    virtual_servers_per_lbs = 10
+    tier0_router = Tier0_LR
+    overlay_tz = TZ
+    container_ip_blocks = e77b1435-54af-43bc-8045-9a22b8e3bdf9
+    external_ip_pools = b1b80f47-97de-4d1a-81d8-93bf6c98d613
+    top_firewall_section_marker = aedcc7ec-ccf1-44ee-a66e-b371371b87e9
+    bottom_firewall_section_marker = 001fd432-cd48-4339-926e-d692032cb0e7
 ---
-apiVersion: extensions/v1beta1
-kind: DaemonSet
+apiVersion: v1
+kind: ReplicationController
 metadata:
-  name: nsx-node-agent
+  name: nsx-ncp
   namespace: nsx-system
   labels:
     tier: nsx-networking
-    component: nsx-node-agent
+    component: nsx-ncp
     version: v1
 spec:
-  updateStrategy:
-    type: RollingUpdate
+  replicas: 1
   template:
     metadata:
-      annotations:
       labels:
         tier: nsx-networking
-        component: nsx-node-agent
+        component: nsx-ncp
         version: v1
     spec:
       hostNetwork: true
-      serviceAccountName: nsx-node-agent-svc-account
+      serviceAccountName: ncp-svc-account
       containers:
-        - name: nsx-node-agent
+        - name: nsx-ncp
           image: harbor-tenant-01.sg.lab/singapore-infra/nsx-ncp:2.3.0
           imagePullPolicy: IfNotPresent
-          command: ["start_node_agent"]
+          env:
+            - name: NCP_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NCP_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           livenessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
-                - check_pod_liveness nsx-node-agent
+                - check_pod_liveness nsx-ncp
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 10
             failureThreshold: 5
-          securityContext:
-            privileged: true
-            capabilities:
-              add:
-                - NET_ADMIN
-                - SYS_ADMIN
-                - SYS_PTRACE
-                - DAC_READ_SEARCH
           volumeMounts:
           - name: config-volume
             mountPath: /etc/nsx-ujo/ncp.ini
             subPath: ncp.ini
             readOnly: true
-          - name: openvswitch
-            mountPath: /var/run/openvswitch
-          - name: cni-sock
-            mountPath: /var/run/nsx-ujo
-          - name: netns
-            mountPath: /var/run/netns
-          - name: proc
-            mountPath: /host/proc
-            readOnly: true
-        - name: nsx-kube-proxy
-          image: harbor-tenant-01.sg.lab/singapore-infra/nsx-ncp:2.3.0
-          imagePullPolicy: IfNotPresent
-          command: ["start_kube_proxy"]
-          livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - check_pod_liveness nsx-kube-proxy
-            initialDelaySeconds: 5
-            periodSeconds: 5
-          securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN
-                - SYS_ADMIN
-                - SYS_PTRACE
-                - DAC_READ_SEARCH
-                - DAC_OVERRIDE
-          volumeMounts:
-          - name: config-volume
-            mountPath: /etc/nsx-ujo/ncp.ini
-            subPath: ncp.ini
-            readOnly: true
-          - name: openvswitch
-            mountPath: /var/run/openvswitch
       volumes:
         - name: config-volume
           configMap:
-            name: nsx-node-agent-config
-        - name: cni-sock
-          hostPath:
-            path: /var/run/nsx-ujo
-        - name: netns
-          hostPath:
-            path: /var/run/netns
-        - name: proc
-          hostPath:
-            path: /proc
-        - name: openvswitch
-          hostPath:
-            path: /var/run/openvswitch
+            name: nsx-ncp-config
