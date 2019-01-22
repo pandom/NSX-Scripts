@@ -1,4 +1,4 @@
-$cred = Get-Credential -user admin -password VMware1!
+$cred = Get-Credential -user admin
 $server = "nsxmgr-01a.corp.local"
 $port = "443"
 $protocol = $connection.Protocol
