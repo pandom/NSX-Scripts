@@ -1,5 +1,5 @@
-$cred = Get-Credential
-$server = "192.168.172.180"
+$cred = Get-Credential -user admin -password VMware1!
+$server = "nsxmgr-01a.corp.local"
 $port = "443"
 $protocol = $connection.Protocol
 $timeout = 10
