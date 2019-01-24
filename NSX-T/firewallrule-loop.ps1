@@ -34,6 +34,7 @@ foreach ($item in $id) {
     if ($result.results.services) {
         
         $result.results
+        write-host -foregroundcolor green "This rule uses the following services"
         $result.results.services.service
         
     }
