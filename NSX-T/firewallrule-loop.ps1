@@ -1,5 +1,5 @@
 $cred = Get-Credential -user admin
-$server = "nsxmgr-01a.corp.local"
+#$server = "nsxmgr-01a.corp.local"
 $port = "443"
 $protocol = $connection.Protocol
 $timeout = 10
@@ -30,5 +30,15 @@ foreach ($item in $id) {
     $resultsection = $result.results.section_id
 
     write-host -foregroundcolor green  "$resultnum rule(s) found in $resultsection "
-    $result.results
+    
+    if ($result.results.services) {
+        
+        $result.results
+        $result.results.services.service
+        
+    }
+    else {
+        $result.results
+    }
+    
 }
