@@ -1,6 +1,6 @@
 Extension.Register
 Extension.Update
-Extension.Unregister 
+Extension.Unregister
 Sessions.TerminateSession
 Sessions.ValidateSession
 Sessions.GlobalMessage
@@ -14,7 +14,7 @@ Task.Update
 ScheduledTask.Create
 ScheduledTask.Delete
 ScheduledTask.Run
-ScheduledTask.Edit   
+ScheduledTask.Edit
 Global.CancelTask
 Authorization.ReassignRolePermissions
 Resource.AssignVMToPool
