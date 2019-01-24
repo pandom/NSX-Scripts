@@ -3,6 +3,14 @@
 [string]$nsxtuser = "svc_nsx"
 [string]$vcentername = "vc-01a.corp.local"
 
+
+# NSX_T user
+$nsxt_user = "$domain\$nsxtuser"
+
+# NSX_T permissions
+$nsxt_role = "nsxt_permissions"
+ 
+#Roles for NSX-T 2.3+
 $nsxt_privileges = @(
 'Extension.Register',
 'Extension.Update',
@@ -99,15 +107,6 @@ $nsxt_privileges = @(
 'VApp.Rename'
 )
 
-# NSX_T user
-$nsxt_user = "$domain\$nsxtuser"
-
-# NSX_T permissions
-$nsxt_role = "nsxt_permissions"
- 
-#Privileges to assign to role $nsxt_role
-
-$roleidfile = "~/Repositories/nsx-scripts/NSX-T/nsx_role_ids.txt"
 
 # PRE CHECK
 # VCSA has no APIS for SSO features in VCSA. Therefore an account must be manually made otherwise it does not work. I will do a check and throw before doing this to ensure user has gone and made a manual user. Ugh!
@@ -135,7 +134,10 @@ else {
     $existingrole = get-virole -name $nsxt_role -ErrorAction silentlycontinue
 
     if ($existingrole){
-        write-host -ForegroundColor Green "Found existing role $nsxt_role - Assigning to $nsxt_user"
+        $guid = (new-guid).Guid.substring(0,6)
+        write-host -ForegroundColor Green "Found existing role named $nsxt_role. Creating a new role $nsxt_role-$guid and assigning to $nsxt_user"
+        New-VIRole -Name "$nsxt_role-$guid" -Privilege (Get-VIPrivilege -id $nsxt_privileges) | out-null
+
         New-VIPermission -Entity $rootFolder -Principal $nsxt_user -Role $nsxt_role -Propagate:$true | Out-Null
     }
     else {
